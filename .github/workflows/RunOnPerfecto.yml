@@ -11,7 +11,5 @@ jobs:
         with:
           distribution: 'zulu' # See 'Supported distributions' for available options
           java-version: '11'
-      - name: Clean and Install
-        run: mvn clean install
       - name: Run test
-        run: mvn test -Dreportium-job-name=${{ github.job }} -Dreportium-job-number=${{ github.run_number }}
+        run: mvn clean install test -Dreportium-job-name=${{ github.job }} -Dreportium-job-number=${{ github.run_number }}
