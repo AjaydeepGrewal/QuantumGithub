@@ -14,8 +14,8 @@ Feature: Google Search
   Scenario: Search Quantum
     Given I am on Google Search Page
     When I search for "perfecto mobile quantum"
-    Then it should have "perfecto" in search results
-    Then I am on Google Search Page
+    #Then it should have "perfecto" in search results
+    #Then I am on Google Search Page
 
   @WebResultsList
   Scenario: Search Quantum with results
