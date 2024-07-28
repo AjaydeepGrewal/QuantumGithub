@@ -1,5 +1,5 @@
 name: Scenario 1
-on: push
+on: [push, workflow_dispatch]
 jobs:
   testOnPerfecto:
     runs-on: ubuntu-latest
