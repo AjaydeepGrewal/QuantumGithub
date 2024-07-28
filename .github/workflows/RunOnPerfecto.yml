@@ -6,11 +6,5 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Install JAVA
-        run: echo $JAVA_HOME_21_X64      
-      - name: Install Python 3.9
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.9' 
       - name: Run test
-        run: python --version
+        run: mvn clean install test -Dreportium-job-name=${{ github.job }} -Dreportium-job-number=${{ github.run_number }}
