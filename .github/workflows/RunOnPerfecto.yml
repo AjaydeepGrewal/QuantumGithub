@@ -6,7 +6,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      - name: Install JAVA
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
       - name: Run test
-        run: |
-          JAVA_HOME = JAVA_HOME_17_X64
-          echo $JAVA_HOME
+        run: mvn clean install test -Dreportium-job-name=${{ github.job }} -Dreportium-job-number=${{ github.run_number }}
