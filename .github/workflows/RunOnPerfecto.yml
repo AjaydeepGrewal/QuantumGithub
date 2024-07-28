@@ -7,7 +7,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Install JAVA
-        run: java --version      
+        run: echo $JAVA_HOME_21_X64      
       - name: Install Python 3.9
         uses: actions/setup-python@v5
         with:
