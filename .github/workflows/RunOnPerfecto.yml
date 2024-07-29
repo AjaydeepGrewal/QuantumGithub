@@ -1,27 +1,10 @@
-name: Scenario Parallel
+name: Scenario 1
 on: [push, workflow_dispatch]
 jobs:
-  testOnPerfecto_First:
+  testOnPerfecto:
     runs-on: ubuntu-latest
     steps:
-      - name: Install JAVA
-        uses: actions/setup-java@v4
-        with:
-         distribution: 'zulu' # See 'Supported distributions' for available options
-         java-version: '17'
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Run test
         run: mvn clean install test -Dreportium-job-name=${{ github.job }} -Dreportium-job-number=${{ github.run_number }}
-  testOnPerfecto_Second:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Install JAVA
-        uses: actions/setup-java@v4
-        with:
-         distribution: 'zulu' # See 'Supported distributions' for available options
-         java-version: '17'
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Run test
-        run: mvn clean install test -Dreportium-job-name=${{ github.job }} -Dreportium-job-number=${{ github.run_number }} -Dsurefire.suiteXmlFiles=src/main/resources/config/testng_appium.xml
