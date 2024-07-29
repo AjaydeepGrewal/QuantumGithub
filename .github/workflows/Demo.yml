@@ -1,5 +1,5 @@
 name: Demo
-on: [push, workflow_dispatch]
+on: [workflow_dispatch]
 jobs:
   DemoOnPerfecto1:
     runs-on: ubuntu-latest
