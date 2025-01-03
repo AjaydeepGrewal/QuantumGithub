@@ -2,6 +2,7 @@ name: Scenario 1
 on: [workflow_dispatch]
 env:
   security_token: ${{ secrets.Security_Token }}
+jobs:
   testOnPerfecto:
     runs-on: ubuntu-latest
     steps:
