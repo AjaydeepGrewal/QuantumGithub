@@ -44,20 +44,4 @@
 				name="com.qmetry.qaf.automation.step.client.gherkin.GherkinScenarioFactory" />
 		</classes>
 	</test>
-	<test name="Web Scenarios iOS Test" enabled="true" thread-count="3">
-		<parameter name="perfecto.additional.capabilities"
-			value="{'perfecto:openDeviceTimeout':15}" />
-		<parameter name="perfecto.capabilities.model" value="iPhone.*"></parameter>
-		<parameter name="perfecto.capabilities.browserName" value="Safari"></parameter>
-		<parameter name="perfecto.capabilities.automationName" value="Appium"></parameter>
-		<groups>
-			<run>
-				<include name="@WebSearch" />
-			</run>
-		</groups>
-		<classes>
-			<class
-				name="com.qmetry.qaf.automation.step.client.gherkin.GherkinScenarioFactory" />
-		</classes>
-	</test>
 </suite>
