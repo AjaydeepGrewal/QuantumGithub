@@ -58,9 +58,15 @@
 					</systemPropertyVariables>
 
 					<suiteXmlFiles>
-						<suiteXmlFile>src/main/resources/config/testng_githubDemo.xml</suiteXmlFile>
+						<suiteXmlFile>src/main/resources/config/testng_appium.xml</suiteXmlFile>
 					</suiteXmlFiles>
 					<skipTests>${skipTests}</skipTests>
+					<properties>
+						<property>
+							<name>usedefaultlisteners</name>
+							<value>true</value>
+						</property>
+					</properties>
 				</configuration>
 			</plugin>
 		</plugins>
