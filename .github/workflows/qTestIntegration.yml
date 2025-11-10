@@ -45,8 +45,7 @@ jobs:
         # This step executes your tests and creates the XML file in the path defined by XML_REPORT_DIR
         run: |
           echo "Starting test execution to generate JUnit reports..."
-          cd Quantum-Starter-Kit
-          mvn clean test
+          run: mvn clean install test -Dreportium-job-name=${{ github.job }} -Dreportium-job-number=${{ github.run_number }} -Dperfecto.capabilities.securityToken=${{ env.security_token }}
           echo "Test execution complete. Reports should be available in ${GITHUB_WORKSPACE}/${XML_REPORT_DIR}"
 
       # 2. PARSE, CREATE CYCLE, AND SUBMIT
