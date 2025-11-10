@@ -39,8 +39,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.x'
-
-      ---
       
       # 1. GENERATE JUNIT RESULTS FILE
       - name: 🔨 Run Maven Tests and Generate JUnit Report
@@ -50,8 +48,6 @@ jobs:
           cd Quantum-Starter-Kit
           mvn clean test
           echo "Test execution complete. Reports should be available in ${GITHUB_WORKSPACE}/${XML_REPORT_DIR}"
-        
-      ---
 
       # 2. PARSE, CREATE CYCLE, AND SUBMIT
       - name: ⚙️ Parse XML, Create Cycle, & Submit Results to qTest
