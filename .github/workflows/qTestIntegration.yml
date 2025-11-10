@@ -23,7 +23,7 @@ jobs:
       
       # Define paths and URLs
       XML_REPORT_DIR: ${{ github.workspace }}/target/surefire-reports/junitreports/
-      QTEST_RUN_URL: 'https://cambridgeasmt.qtestnet.com/api/v3/projects/41456/test-runs/automation'
+      QTEST_RUN_URL: 'https://cambridgeasmt.qtestnet.com/api/v3/projects/41456/test-runs/auto-test-logs?type=automation'
 
     steps:
       - name: 📥 Checkout Repository
