@@ -22,7 +22,7 @@ jobs:
       SECURITY_TOKEN: ${{ secrets.SECURITY_TOKEN }}
       
       # Define paths and URLs
-      XML_REPORT_DIR: '/target/surefire-reports/junitreports/'
+      XML_REPORT_DIR: ${{ github.workspace }}/target/surefire-reports/junitreports/
       QTEST_RUN_URL: 'https://cambridgeasmt.qtestnet.com/api/v3/projects/41456/test-runs/automation'
 
     steps:
