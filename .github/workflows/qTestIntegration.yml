@@ -171,6 +171,10 @@ jobs:
               "test_cycle": str(NEW_CYCLE_ID), 
               "test_logs": test_logs_list
           }
+
+          print("\n--- FINAL PAYLOAD TO BE SUBMITTED TO QTEST ---")
+          print(json.dumps(final_payload, indent=2))
+          print("-------------------------------------------------")
           
           # --- 4. Submit Test Runs ---
           print(f"\nAttempting to submit Test Runs to new Cycle ID: {NEW_CYCLE_ID}")
