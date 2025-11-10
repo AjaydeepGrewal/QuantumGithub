@@ -9,7 +9,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Run test
-        run: mvn clean install test -Dreportium-job-name=${{ github.job }} -Dreportium-job-number=${{ github.run_number }} -Dperfecto.capabilities.securityToken=eyJhbGciOiJIUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICIyODhhNDIyNS1jOTE1LTQwZDctOTc2YS04MDhiMWE3YTFmODYifQ.eyJpYXQiOjE3NjE5NDEzMzMsImp0aSI6ImE5ZjkzZDRkLTZkN2UtNDk4Yi1hZDFhLTYxYmE3ODdlMjQzYiIsImlzcyI6Imh0dHBzOi8vYXV0aC5wZXJmZWN0b21vYmlsZS5jb20vYXV0aC9yZWFsbXMvcHMtcGVyZmVjdG9tb2JpbGUtY29tIiwiYXVkIjoiaHR0cHM6Ly9hdXRoLnBlcmZlY3RvbW9iaWxlLmNvbS9hdXRoL3JlYWxtcy9wcy1wZXJmZWN0b21vYmlsZS1jb20iLCJzdWIiOiI3YzAyMTU5ZC0zNjNmLTQ2ZDUtYjcyMS1hYjY1MGFlYzQ3ODQiLCJ0eXAiOiJPZmZsaW5lIiwiYXpwIjoib2ZmbGluZS10b2tlbi1nZW5lcmF0b3IiLCJub25jZSI6ImE3ZDkxOWY3LWY4ZjQtNGVjZi04ZGE3LTM0NjUwNTM3MjY0ZiIsInNlc3Npb25fc3RhdGUiOiIwMTAzN2VjMi03YmE5LTQ4MDgtYTMyZC00Y2FlZDkwOGQ0ZDgiLCJzY29wZSI6Im9wZW5pZCBvZmZsaW5lX2FjY2VzcyIsInNpZCI6IjAxMDM3ZWMyLTdiYTktNDgwOC1hMzJkLTRjYWVkOTA4ZDRkOCJ9.2zilOo3_wwazttNPWcw0mfvq63KdDjoQ5uPgVEfLVUc
+        run: mvn clean install test -Dreportium-job-name=${{ github.job }} -Dreportium-job-number=${{ github.run_number }} -Dperfecto.capabilities.securityToken=
       - name: Retrieve Artifacts
         if: always()
         uses: actions/upload-artifact@v4
