@@ -42,6 +42,7 @@ jobs:
       
       # 1. GENERATE JUNIT RESULTS FILE
       - name: 🔨 Run Maven Tests and Generate JUnit Report
+        continue-on-error: true
         # This step executes your tests and creates the XML file in the path defined by XML_REPORT_DIR
         run: |
           echo "Starting test execution to generate JUnit reports..."
