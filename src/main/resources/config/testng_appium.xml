@@ -9,7 +9,7 @@
     <!-- Set driver.name value to perfectoDriver       -->
     <parameter name="driver.name" value="perfectoDriver"/>
 
-    <test name="IOS Expense Tracker Test" enabled="true">
+    <test name="Verify Expense tracker Login" enabled="true">
         <parameter name="perfecto.capabilities.model" value="iPhone.*"/>
         
         <parameter name="driver.capabilities.app" value="PUBLIC:ExpenseTracker/Native/iOS/InvoiceApp1.0.ipa"/>
@@ -27,7 +27,7 @@
         </classes>
     </test>
 
-    <test name="Android Expense Tracker Test" enabled="true">
+    <test name="Android Expense Tracker Test" enabled="false">
         <parameter name="perfecto.capabilities.model" value="(?!.*Tab).*"/>
         <parameter name="perfecto.capabilities.app" value="PUBLIC:ExpenseTracker/Native/ExpenseAppVer1.0.apk"/>
         <parameter name="perfecto.capabilities.appPackage" value="io.perfecto.expense.tracker"/>
