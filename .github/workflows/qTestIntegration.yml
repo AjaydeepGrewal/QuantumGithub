@@ -167,7 +167,7 @@ jobs:
           print("🔺🔺🔺 END PAYLOAD PREVIEW 🔺🔺🔺\n")
 
           # --- 3. Submit ---
-          logs_endpoint = f"/projects/{QTEST_PROJECT_ID}/test-runs/auto-test-logs?type=automation"
+          logs_endpoint = f"/projects/{QTEST_PROJECT_ID}/auto-test-logs?type=automation"
           run_response = send_request(logs_endpoint, "POST", final_payload)
 
           print(f"✅ Results successfully uploaded.")
