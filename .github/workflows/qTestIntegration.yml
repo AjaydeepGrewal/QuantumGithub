@@ -1,9 +1,6 @@
 name: CI & QTest Automation Reporting
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 jobs:
@@ -16,13 +13,12 @@ jobs:
       QTEST_TOKEN: ${{ secrets.QTEST_TOKEN }} 
       QTEST_PROJECT_ID: 41456
       
-      # ⬇️ UPDATE THIS: The internal numeric ID for Cycle CL-178
-      # You can find this in the qTest URL when you click on the cycle.
-      QTEST_CYCLE_ID: 123456  
+      # Target Cycle ID (Human Readable)
+      QTEST_CYCLE_ID: 'CL-178'
       
       SECURITY_TOKEN: ${{ secrets.SECURITY_TOKEN }}
       
-      # Paths and URLs
+      # Paths
       XML_REPORT_DIR: ${{ github.workspace }}/target/surefire-reports/junitreports
       QTEST_BASE_URL: 'https://cambridgeasmt.qtestnet.com/api/v3'
 
@@ -30,11 +26,13 @@ jobs:
       - name: 📥 Checkout Repository
         uses: actions/checkout@v4
 
-      - name: ☕ Set up JDK ${{ env.JAVA_VERSION }}
+      # ✅ CACHING ENABLED HERE
+      - name: ☕ Set up JDK ${{ env.JAVA_VERSION }} with Maven Cache
         uses: actions/setup-java@v4
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: 'temurin'
+          # This option automatically caches Maven dependencies
           cache: 'maven'
 
       - name: 🐍 Set up Python
@@ -51,8 +49,8 @@ jobs:
             -Dreportium-job-number=${{ github.run_number }} \
             -Dperfecto.capabilities.securityToken=${{ secrets.SECURITY_TOKEN }}
 
-      # 2. PARSE & SUBMIT TO EXISTING CYCLE
-      - name: ⚙️ Parse XML & Submit to Cycle CL-178
+      # 2. PARSE & SUBMIT TO CL-178
+      - name: ⚙️ Parse XML & Submit Results
         id: parse_and_submit
         env:
           GITHUB_RUN_NUMBER: ${{ github.run_number }}
@@ -75,14 +73,15 @@ jobs:
           QTEST_BASE_URL = os.environ['QTEST_BASE_URL']
           QTEST_PROJECT_ID = os.environ['QTEST_PROJECT_ID']
           QTEST_TOKEN = os.environ['QTEST_TOKEN']
-          
-          # The existing cycle ID (CL-178's internal ID)
           TARGET_CYCLE_ID = os.environ['QTEST_CYCLE_ID']
 
-          # Static values
+          # Static values 
           MODULE_NAMES = ["ProductionV5.0", "API Tests"]
           STATUS_MAP = {
-              "Passed": "PASSED", "Failed": "FAILED", "Skipped": "SKIPPED", "Error": "FAILED" 
+              "Passed": "Passed", 
+              "Failed": "Failed", 
+              "Skipped": "Skipped", 
+              "Error": "Failed" 
           }
 
           # --- HELPER: Native HTTP Request ---
@@ -132,16 +131,17 @@ jobs:
                   
                   for testcase in root.findall('testcase'):
                       test_name = testcase.get('name')
-                      status = 'Passed' 
-                      if testcase.find('failure') is not None: status = 'Failed'
-                      elif testcase.find('error') is not None: status = 'Error'
-                      elif testcase.find('skipped') is not None: status = 'Skipped'
+                      status_key = 'Passed'
+                      
+                      if testcase.find('failure') is not None: status_key = 'Failed'
+                      elif testcase.find('error') is not None: status_key = 'Error'
+                      elif testcase.find('skipped') is not None: status_key = 'Skipped'
                       
                       all_test_logs.append({
                           "name": test_name,
-                          "automation_content": test_name,
+                          "automation_content": test_name, 
                           "module_names": MODULE_NAMES,
-                          "status": STATUS_MAP.get(status, "UNEXECUTED"),
+                          "status": STATUS_MAP.get(status_key, "UNEXECUTED"),
                           "exe_start_date": current_time_utc,
                           "exe_end_date": current_time_utc, 
                           "test_step_logs": [] 
@@ -153,14 +153,20 @@ jobs:
               print("No test cases extracted. Exiting.")
               sys.exit(0)
 
-          # --- 2. Submit Directly to Existing Cycle ---
+          # --- 2. Prepare Payload ---
           final_payload = {
-              "test_cycle": str(TARGET_CYCLE_ID), 
+              "test_cycle": TARGET_CYCLE_ID, 
               "test_logs": all_test_logs
           }
 
-          print(f"Submitting {len(all_test_logs)} results to Cycle ID: {TARGET_CYCLE_ID}")
+          print(f"Submitting {len(all_test_logs)} results to Cycle: {TARGET_CYCLE_ID}")
           
+          # ✅ DEBUG: Print full payload before sending
+          print("\n🔻🔻🔻 FULL PAYLOAD PREVIEW 🔻🔻🔻")
+          print(json.dumps(final_payload, indent=2))
+          print("🔺🔺🔺 END PAYLOAD PREVIEW 🔺🔺🔺\n")
+
+          # --- 3. Submit ---
           logs_endpoint = f"/projects/{QTEST_PROJECT_ID}/test-runs/auto-test-logs?type=automation"
           run_response = send_request(logs_endpoint, "POST", final_payload)
 
