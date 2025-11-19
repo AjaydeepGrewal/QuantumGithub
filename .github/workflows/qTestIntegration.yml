@@ -10,20 +10,21 @@ jobs:
   run-tests-and-report:
     runs-on: ubuntu-latest
     
-    # --- Environment Variables ---
     env:
-      # General Setup Variables
       JAVA_VERSION: '17'
-      
-      # qTest Reporting Variables (Use secrets for the token)
+      # qTest Credentials
       QTEST_TOKEN: ${{ secrets.QTEST_TOKEN }} 
       QTEST_PROJECT_ID: 41456
-      QTEST_PARENT_CYCLE_ID: 5644943
+      
+      # ⬇️ UPDATE THIS: The internal numeric ID for Cycle CL-178
+      # You can find this in the qTest URL when you click on the cycle.
+      QTEST_CYCLE_ID: 123456  
+      
       SECURITY_TOKEN: ${{ secrets.SECURITY_TOKEN }}
       
-      # Define paths and URLs
-      XML_REPORT_DIR: ${{ github.workspace }}/target/surefire-reports/junitreports/
-      QTEST_RUN_URL: 'https://cambridgeasmt.qtestnet.com/api/v3/projects/41456/test-runs/auto-test-logs?type=automation'
+      # Paths and URLs
+      XML_REPORT_DIR: ${{ github.workspace }}/target/surefire-reports/junitreports
+      QTEST_BASE_URL: 'https://cambridgeasmt.qtestnet.com/api/v3'
 
     steps:
       - name: 📥 Checkout Repository
@@ -42,148 +43,128 @@ jobs:
           python-version: '3.x'
       
       # 1. GENERATE JUNIT RESULTS FILE
-      - name: 🔨 Run Maven Tests and Generate JUnit Report
+      - name: 🔨 Run Maven Tests
         continue-on-error: true
-        # This step executes your tests and creates the XML file in the path defined by XML_REPORT_DIR
         run: |
-          echo "Starting test execution to generate JUnit reports..."
-          echo "$PERFECTO_TOKEN"
-          mvn clean install test -Dreportium-job-name=${{ github.job }} -Dreportium-job-number=${{ github.run_number }} -Dperfecto.capabilities.securityToken=${{secrets.SECURITY_TOKEN}}
-          echo "Test execution complete. Reports should be available in ${GITHUB_WORKSPACE}/${XML_REPORT_DIR}"
+          mvn clean install test \
+            -Dreportium-job-name=${{ github.job }} \
+            -Dreportium-job-number=${{ github.run_number }} \
+            -Dperfecto.capabilities.securityToken=${{ secrets.SECURITY_TOKEN }}
 
-      # 2. PARSE, CREATE CYCLE, AND SUBMIT
-      - name: ⚙️ Parse XML, Create Cycle, & Submit Results to qTest
+      # 2. PARSE & SUBMIT TO EXISTING CYCLE
+      - name: ⚙️ Parse XML & Submit to Cycle CL-178
         id: parse_and_submit
-        # Pass GitHub built-in and custom environment variables to the script
         env:
           GITHUB_RUN_NUMBER: ${{ github.run_number }}
           
         run: |
-          # The entire Python script logic is embedded here to handle all reporting steps.
           python << EOF
           import xml.etree.ElementTree as ET
           import json
           import os
           import sys
           import glob
-          import subprocess
+          import urllib.request
+          import urllib.error
           from datetime import datetime, timezone
 
-          # --- CONFIGURATION (Reading from GitHub Actions ENV) ---
-          XML_SEARCH_PATH = os.environ['XML_REPORT_DIR'] + 'TEST-*.xml'
-          QTEST_RUN_URL = os.environ['QTEST_RUN_URL']
+          # --- CONFIGURATION ---
+          XML_DIR = os.environ.get('XML_REPORT_DIR', '')
+          XML_SEARCH_PATH = os.path.join(XML_DIR, 'TEST-*.xml')
+          
+          QTEST_BASE_URL = os.environ['QTEST_BASE_URL']
           QTEST_PROJECT_ID = os.environ['QTEST_PROJECT_ID']
-          QTEST_PARENT_CYCLE_ID = os.environ['QTEST_PARENT_CYCLE_ID']
           QTEST_TOKEN = os.environ['QTEST_TOKEN']
           
-          # Use GitHub Run Number for unique cycle name
-          RUN_NUMBER = os.environ['GITHUB_RUN_NUMBER']
-          CYCLE_NAME = f"GitHub Run #{RUN_NUMBER}" 
-          
-          # API endpoint for creating a new Test Cycle
-          QTEST_CYCLE_URL = f"https://cambridgeasmt.qtestnet.com/api/v3/projects/{QTEST_PROJECT_ID}/test-cycles?parentId={QTEST_PARENT_CYCLE_ID}&parentType=test-cycle"
+          # The existing cycle ID (CL-178's internal ID)
+          TARGET_CYCLE_ID = os.environ['QTEST_CYCLE_ID']
 
-          # Static values and mappings
+          # Static values
           MODULE_NAMES = ["ProductionV5.0", "API Tests"]
           STATUS_MAP = {
               "Passed": "PASSED", "Failed": "FAILED", "Skipped": "SKIPPED", "Error": "FAILED" 
           }
-          
-          # --- HELPER FUNCTION: Execute Curl Request (for brevity, keeping the full function here) ---
-          def execute_curl(url, method, payload=None):
-              print(f"\n[CURL] Executing {method} request to {url}")
-              curl_command = [
-                  'curl', '-s', '-X', method, url,
-                  '-H', f"Authorization: Bearer {QTEST_TOKEN}",
-                  '-H', 'Content-Type: application/json'
-              ]
-              if payload:
-                  PAYLOAD_FILE = 'temp_payload.json'
-                  with open(PAYLOAD_FILE, 'w') as f:
-                      json.dump(payload, f)
-                  curl_command.extend(['-d', f'@{PAYLOAD_FILE}'])
 
-              result = subprocess.run(curl_command, capture_output=True, text=True, check=False)
+          # --- HELPER: Native HTTP Request ---
+          def send_request(endpoint, method, payload=None):
+              url = f"{QTEST_BASE_URL}{endpoint}"
+              print(f"\n[API] {method} {url}")
               
-              if result.returncode != 0:
-                  print(f"::error::Curl failed with exit code {result.returncode}. Stderr: {result.stderr}")
-                  return None
+              headers = {
+                  'Content-Type': 'application/json',
+                  'Authorization': f"Bearer {QTEST_TOKEN}"
+              }
+              
+              data = json.dumps(payload).encode('utf-8') if payload else None
+              req = urllib.request.Request(url, data=data, headers=headers, method=method)
               
               try:
-                  return json.loads(result.stdout)
-              except json.JSONDecodeError:
-                  print(f"::warning::API response was not valid JSON. Raw Response: {result.stdout}")
-                  return {"error": result.stdout}
+                  with urllib.request.urlopen(req) as response:
+                      if response.status >= 200 and response.status < 300:
+                          return json.loads(response.read().decode('utf-8'))
+                      else:
+                          print(f"::error::HTTP Error {response.status}")
+                          return None
+              except urllib.error.HTTPError as e:
+                  error_body = e.read().decode()
+                  print(f"::error::API Request Failed: {e.code} - {error_body}")
+                  sys.exit(1)
+              except Exception as e:
+                  print(f"::error::Unexpected error: {e}")
+                  sys.exit(1)
 
-          # --- 1. Locate and Parse XML ---
+          # --- 1. Locate and Parse XML Files ---
           xml_files = glob.glob(XML_SEARCH_PATH)
           
           if not xml_files:
               print(f"::warning::No XML reports found at {XML_SEARCH_PATH}. Skipping qTest submission.")
               sys.exit(0)
 
-          XML_FILE_PATH = xml_files[0]
-          try:
-              tree = ET.parse(XML_FILE_PATH)
-              root = tree.getroot()
-          except Exception as e:
-              print(f"::error::Error parsing XML: {e}")
-              sys.exit(1)
-
-          # --- 2. Create New Test Cycle ---
-          cycle_payload = {"name": CYCLE_NAME}
-          print(f"Attempting to create new Test Cycle: {CYCLE_NAME}")
-          
-          cycle_response = execute_curl(QTEST_CYCLE_URL, "POST", cycle_payload)
-          
-          if cycle_response and 'id' in cycle_response:
-              NEW_CYCLE_ID = cycle_response['id']
-              print(f"✅ Successfully created new Test Cycle ID: {NEW_CYCLE_ID}")
-          else:
-              print(f"::error::Failed to create new Test Cycle. Cannot proceed. Response: {json.dumps(cycle_response)}")
-              sys.exit(1)
-
-          # --- 3. Extract Test Results & Build Payload ---
-          results = []
-          for testcase in root.findall('testcase'):
-              test_name = testcase.get('name')
-              status = 'Passed' 
-              if testcase.find('failure') is not None: status = 'Failed'
-              elif testcase.find('error') is not None: status = 'Error'
-              elif testcase.find('skipped') is not None: status = 'Skipped'
-              results.append({"name": test_name, "status": status})
-          
+          all_test_logs = []
           current_time_utc = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
-          test_logs_list = []
-          
-          for result in results:
-              test_logs_list.append({
-                  "name": result['name'],
-                  "automation_content": result['name'], 
-                  "module_names": MODULE_NAMES,
-                  "status": STATUS_MAP.get(result['status'], "UNEXECUTED"),
-                  "exe_start_date": current_time_utc,
-                  "exe_end_date": current_time_utc, 
-                  "test_step_logs": [] 
-              })
 
+          print(f"Found {len(xml_files)} XML files. Parsing...")
+
+          for xml_file in xml_files:
+              try:
+                  tree = ET.parse(xml_file)
+                  root = tree.getroot()
+                  
+                  for testcase in root.findall('testcase'):
+                      test_name = testcase.get('name')
+                      status = 'Passed' 
+                      if testcase.find('failure') is not None: status = 'Failed'
+                      elif testcase.find('error') is not None: status = 'Error'
+                      elif testcase.find('skipped') is not None: status = 'Skipped'
+                      
+                      all_test_logs.append({
+                          "name": test_name,
+                          "automation_content": test_name,
+                          "module_names": MODULE_NAMES,
+                          "status": STATUS_MAP.get(status, "UNEXECUTED"),
+                          "exe_start_date": current_time_utc,
+                          "exe_end_date": current_time_utc, 
+                          "test_step_logs": [] 
+                      })
+              except Exception as e:
+                  print(f"::error::Error parsing {xml_file}: {e}")
+
+          if not all_test_logs:
+              print("No test cases extracted. Exiting.")
+              sys.exit(0)
+
+          # --- 2. Submit Directly to Existing Cycle ---
           final_payload = {
-              "test_cycle": str(NEW_CYCLE_ID), 
-              "test_logs": test_logs_list
+              "test_cycle": str(TARGET_CYCLE_ID), 
+              "test_logs": all_test_logs
           }
 
-          print("\n--- FINAL PAYLOAD TO BE SUBMITTED TO QTEST ---")
-          print(json.dumps(final_payload, indent=2))
-          print("-------------------------------------------------")
+          print(f"Submitting {len(all_test_logs)} results to Cycle ID: {TARGET_CYCLE_ID}")
           
-          # --- 4. Submit Test Runs ---
-          print(f"\nAttempting to submit Test Runs to new Cycle ID: {NEW_CYCLE_ID}")
-          run_response = execute_curl(QTEST_RUN_URL, "POST", final_payload)
+          logs_endpoint = f"/projects/{QTEST_PROJECT_ID}/test-runs/auto-test-logs?type=automation"
+          run_response = send_request(logs_endpoint, "POST", final_payload)
 
-          if run_response and 'successful' in run_response.get('result', {}).get('status', '').lower():
-             print("✅ qTest Test Run submission successful.")
-          else:
-             print(f"❌ qTest Test Run submission failed. Response: {json.dumps(run_response)}")
+          print(f"✅ Results successfully uploaded.")
           
           EOF
         shell: bash
