@@ -20,23 +20,23 @@ jobs:
       QTEST_BASE_URL: 'https://cambridgeasmt.qtestnet.com/api/v3'
 
     steps:
-      - name: 📥 Checkout Repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: ☕ Set up JDK ${{ env.JAVA_VERSION }} with Maven Cache
+      - name: Set up JDK ${{ env.JAVA_VERSION }} with Maven Cache
         uses: actions/setup-java@v4
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: 🐍 Set up Python
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.x'
       
       # 1. GENERATE JUNIT RESULTS FILE
-      - name: 🔨 Run Maven Tests
+      - name: Run Maven Tests
         continue-on-error: true
         run: |
           mvn clean install test \
@@ -45,7 +45,7 @@ jobs:
             -Dperfecto.capabilities.securityToken=${{ secrets.SECURITY_TOKEN }}
 
       # 2. PARSE XML, CALCULATE DATES & SUBMIT
-      - name: ⚙️ Parse XML & Submit Results
+      - name: Parse XML & Submit Results
         id: parse_and_submit
         env:
           GITHUB_RUN_NUMBER: ${{ github.run_number }}
@@ -59,7 +59,7 @@ jobs:
           import glob
           import urllib.request
           import urllib.error
-          # ✅ Added timedelta for date math
+          # Added timedelta for date math
           from datetime import datetime, timezone, timedelta
 
           # --- CONFIGURATION ---
@@ -129,18 +129,18 @@ jobs:
                   for testcase in root.findall('testcase'):
                       test_name = testcase.get('name')
                       
-                      # ✅ 1. Get Duration from XML (default to 0 if missing)
+                      # 1. Get Duration from XML (default to 0 if missing)
                       time_attr = testcase.get('time', '0')
                       try:
                           duration_seconds = float(time_attr)
                       except ValueError:
                           duration_seconds = 0.0
 
-                      # ✅ 2. Calculate Start Time based on Duration
+                      # 2. Calculate Start Time based on Duration
                       end_dt = now_utc
                       start_dt = end_dt - timedelta(seconds=duration_seconds)
 
-                      # ✅ 3. Format strict ISO 8601 with 'Z'
+                      # 3. Format strict ISO 8601 with 'Z'
                       fmt = '%Y-%m-%dT%H:%M:%SZ'
                       exe_end_str = end_dt.strftime(fmt)
                       exe_start_str = start_dt.strftime(fmt)
@@ -156,8 +156,8 @@ jobs:
                           "automation_content": test_name, 
                           "module_names": MODULE_NAMES,
                           "status": STATUS_MAP.get(status_key, "UNEXECUTED"),
-                          "exe_start_date": exe_start_str, # 🟢 Calculated Start
-                          "exe_end_date": exe_end_str,     # 🟢 Current End
+                          "exe_start_date": exe_start_str, # Calculated Start
+                          "exe_end_date": exe_end_str,     # Current End
                           "test_step_logs": [] 
                       })
               except Exception as e:
@@ -167,7 +167,7 @@ jobs:
               print("No test cases extracted. Exiting.")
               sys.exit(0)
 
-          # --- 2. Prepare Payload ---
+          # 2. Prepare Payload
           final_payload = {
               "test_cycle": TARGET_CYCLE_ID, 
               "test_logs": all_test_logs
@@ -176,15 +176,15 @@ jobs:
           print(f"Submitting {len(all_test_logs)} results to Cycle: {TARGET_CYCLE_ID}")
           
           # Debug Print
-          print("\n🔻🔻🔻 FULL PAYLOAD PREVIEW 🔻🔻🔻")
+          print("\n---- FULL PAYLOAD PREVIEW -----")
           print(json.dumps(final_payload, indent=2))
-          print("🔺🔺🔺 END PAYLOAD PREVIEW 🔺🔺🔺\n")
+          print("---- END PAYLOAD PREVIEW ----\n")
 
-          # --- 3. Submit ---
+          # 3. Submit
           logs_endpoint = f"/projects/{QTEST_PROJECT_ID}/auto-test-logs?type=automation"
           run_response = send_request(logs_endpoint, "POST", final_payload)
 
-          print(f"✅ Results successfully uploaded.")
+          print(f"Results successfully uploaded.")
           
           EOF
         shell: bash
