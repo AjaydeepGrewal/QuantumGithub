@@ -1,3 +1,17 @@
+# Uploading results from the Quantum execution to qTest. The test relies on the Qunatum Junit results file to get the results.
+# We would need the following configured in qTest:
+# 1. qTest Project Id
+# 2. qTest Test Cycle Id
+# 3. Quantum testcase names should match automation_content field of the test case in qTest
+# NOTE : This integration only updates an already created test cycle with an already created test case results.
+# Other relevant API's which can be used to extend this functionality includes:
+# 1> Get all releases in qTest: GET https://cambridgeasmt.qtestnet.com/api/v3/projects/${ProjectId}/releases
+# 2> Create a new release in qTest:POST https://cambridgeasmt.qtestnet.com/api/v3/projects/${ProjectId}/releases
+#     Sample body: {"name": "API Created Release 1.0","start_date": "2025-12-01T00:00:00Z","end_date": "2025-12-31T23:59:59Z",
+#    "status_id": 1,"description": "This release was created via the qTest Manager API."}
+# 3> Get all Test cycles : GET https://cambridgeasmt.qtestnet.com/api/v3/projects/${ProjectId}/releases/${ReleaseId}/
+# 4> Create a new test cycle based on a release: POST : https://cambridgeasmt.qtestnet.com/api/v3/projects/41456/test-cycles?parentId=755925&parentType=release
+#     Sample body: {"name": "UAT Cycle","description": "User Acceptance Testing for new features."}
 name: CI & QTest Automation Reporting
 
 on:
