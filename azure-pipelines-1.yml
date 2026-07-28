@@ -1,0 +1,19 @@
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+# 1. Pull the secret from Azure Key Vault
+- task: AzureKeyVault@2
+  inputs:
+    azureSubscription: 'MyAzureConnection'  # Name of your Azure DevOps service connection
+    KeyVaultName: 'TestDemoValut'          # Name of your Key Vault
+    SecretsFilter: 'Demo12'                # Specifies the exact secret to download
+    RunAsPreJob: false
+
+# 2. Print out the secret in the pipeline logs
+- script: |
+    echo "The secret value is: $(Demo12)"
+  displayName: 'Print Secret Demo12'
